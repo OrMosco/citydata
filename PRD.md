@@ -20,6 +20,11 @@ This document outlines the product requirements for **Tel Aviv Urban Explorer** 
 | **Data Integration** | **Demographics & Local Data** | Demographic data is pulled from the Israel Central Bureau of Statistics (CBS). Tabular data is mapped to local statistical areas to create dot density maps showing population distribution. |
 | **Thematic Map Layers** | **Urban Indicators** | Layers evaluate existing conditions such as land use, development intensity, demographics, and urban morphology. Transit network maps integrate the Tel Aviv Light Rail (Dankal) and local bus networks. |
 | **Location Profiles** | **City Comparisons** | Tel Aviv can be mapped at the same scale as other cities in the Morphocode database (like NYC, Chicago, or Seattle), allowing unfamiliar conditions in Tel Aviv to be understood by comparing them to familiar situations elsewhere. |
+| **Urban Genome** | **Urban Genome Analysis Page** | A dedicated tab/view providing a quantitative "litmus paper test" of good urbanism by analyzing the human interaction potential of a selected area through three fundamental parameters: PSA, ND, and ADD. |
+| **Urban Genome** | **Public Space Allocation (PSA)** | Calculates area of public space per person within the active pedshed, benchmarked against optimal 1-10 m² per person. |
+| **Urban Genome** | **Network Density (ND)** | Counts junctions in the public space network within the pedshed, benchmarked against 200-400 junctions per km². |
+| **Urban Genome** | **Average Destination Distance (ADD)** | Measures average distance between building entrances facing public space, benchmarked against max 30 meters. |
+| **Urban Genome** | **Case Study Comparisons** | Save pedshed profiles and compare side-by-side with benchmark cities (NYC, Chicago, Seattle) at the same scale. |
 
 ---
 
@@ -143,6 +148,136 @@ Tel Aviv can be **mapped at the same scale as other cities** in the Morphocode d
 - Same-scale mapping ensures accurate visual and metric comparisons
 - Supports cross-city benchmarking for density, walkability, and urban form
 
+### 3.5 Urban Genome Analysis Page
+
+#### 3.5.1 Page Overview & Objective
+
+The **Urban Genome Analysis** page is a dedicated tab or scrolling view within Morphocode Explorer that serves as a quantitative **"litmus paper test" of good urbanism**. It analyzes the **human interaction potential** of a selected area by evaluating the physical environment based on three fundamental parameters:
+- **Public Space Allocation (PSA)**
+- **Network Density (ND)**
+- **Average Destination Distance (ADD)**
+
+This feature transforms complex urban metrics into actionable insights, helping users understand how conducive an area is to human interaction and urban vitality.
+
+#### 3.5.2 Core UX/UI Integration
+
+##### The Interactive Pedshed
+The Urban Genome page retains the application's core UI element—the **draggable pedestrian shed** (5-minute walk radius):
+- As users drag the pedshed across the map, the application **fetches new map tiles** and calculates the three Urban Genome parameters **in real-time**
+- The pedshed radius defines the analysis boundary for all three metrics
+
+##### Drag and Scroll Navigation
+| Action | Behavior |
+|--------|----------|
+| **Drag** | As the user drags the pedshed across the map, the application fetches new map tiles and calculates PSA, ND, and ADD in real-time |
+| **Scroll** | The left-hand sidebar guides users through the three Urban Genome data stories (PSA, ND, ADD) as they scroll downward, keeping the interface clean without complex dropdown menus |
+
+##### DataViz Components
+The application's existing **custom D3.js charting library** renders dynamic visualizations that **update instantly** as the pedshed moves:
+- **Gauge Charts** – Show current metric values against benchmark ranges
+- **Dot Density Graphics** – Visualize spatial distribution of elements
+- **Progress Indicators** – Display how close values are to optimal benchmarks
+- **Comparison Cards** – Show side-by-side metric comparisons
+
+#### 3.5.3 Module 1: Public Space Allocation (PSA) Calculator
+
+| Attribute | Description |
+|-----------|-------------|
+| **Function** | Calculates the **area of public space available per person** within the active pedshed |
+| **Purpose** | Informs users of the density of people within public spaces and the likelihood of **mutual presence** |
+| **Data Requirement** | Cross-references the area of mapped public spaces (excluding private/intentional spaces) with **population estimates derived from CBS demographics data** |
+| **Benchmark** | Optimal range: **1 to 10 m² per person** |
+
+**Visualization:**
+- Gauge showing current m² per person
+- Green zone indicator (1-10 m²)
+- Red/yellow zones for values outside optimal range
+- Historical trend comparison (if data available)
+
+#### 3.5.4 Module 2: Network Density (ND) Calculator
+
+| Attribute | Description |
+|-----------|-------------|
+| **Function** | Counts the **number of junctions** in the public space network within the active pedshed |
+| **Purpose** | A higher count indicates more optional routes, ensuring individuals can **maintain anonymity in public spaces** |
+| **Data Requirement** | Spatial data pipeline identifies **street and pedestrian network intersections** within the active pedshed radius |
+| **Benchmark** | Target range: **200 to 400 junctions per km²** |
+
+**Visualization:**
+- Junction count display with km² normalization
+- Dot density map showing junction locations
+- Benchmark comparison bar
+- Network connectivity heat map
+
+#### 3.5.5 Module 3: Average Destination Distance (ADD) Calculator
+
+| Attribute | Description |
+|-----------|-------------|
+| **Function** | Measures the **average distance between entrances** to specific destinations (homes, shops, offices) facing public space within the pedshed |
+| **Purpose** | Indicates the likelihood that **anonymity will transform into interaction** (e.g., vendors meeting clients, neighbors greeting) |
+| **Data Requirement** | Map tiles include **vector point data for building entrances** along public frontages |
+| **Benchmark** | Recommended maximum: **30 meters** between entrances |
+
+**Visualization:**
+- Average distance display (meters)
+- Entrance point visualization on map
+- Warning indicator if distance exceeds 30m
+- Distribution histogram of entrance distances
+
+#### 3.5.6 Urban Genome UI Layout
+
+```
+┌───────────────────────────────────────────────────────────────────────────┐
+│  HEADER: Urban Genome Analysis | Save Profile | Compare Cities            │
+├───────────────────────────────────────────────────────────────────────────┤
+│                                │                                          │
+│  ┌─────────────────────────┐   │       INTERACTIVE MAP                    │
+│  │ 📊 URBAN GENOME SCORE   │   │       - Draggable Pedshed                │
+│  │ ━━━━━━━━━━━━━━━━━━━━━━  │   │       - Junction points overlay          │
+│  │ Overall: 78/100         │   │       - Public space highlighting        │
+│  └─────────────────────────┘   │       - Building entrance markers        │
+│                                │                                          │
+│  ┌─────────────────────────┐   │                  ●──────●                │
+│  │ 🏛️ PUBLIC SPACE (PSA)   │   │               ●/          \●             │
+│  │ ━━━━━━━━━━━━━━━━━━━━━━  │   │              ● │  PEDSHED  │ ●           │
+│  │ 6.2 m²/person           │   │              ● │   AREA    │ ●           │
+│  │ ✅ Optimal (1-10 m²)    │   │               ●\          /●             │
+│  │ [█████████░░] Gauge     │   │                  ●──────●                │
+│  └─────────────────────────┘   │                                          │
+│                                │                                          │
+│  ┌─────────────────────────┐   │                                          │
+│  │ 🔗 NETWORK DENSITY (ND) │   │                                          │
+│  │ ━━━━━━━━━━━━━━━━━━━━━━  │   │                                          │
+│  │ 285 junctions/km²       │   │                                          │
+│  │ ✅ Target (200-400)     │   │                                          │
+│  │ [███████░░░░] Gauge     │   │                                          │
+│  └─────────────────────────┘   │                                          │
+│                                │                                          │
+│  ┌─────────────────────────┐   ├──────────────────────────────────────────┤
+│  │ 📏 AVG DISTANCE (ADD)   │   │  MAP CONTROLS: Zoom | Style | Overlays   │
+│  │ ━━━━━━━━━━━━━━━━━━━━━━  │   │  [Junction Points] [Public Space]        │
+│  │ 24m avg between entries │   │  [Building Entrances] [Network Lines]    │
+│  │ ✅ Below 30m max        │   │                                          │
+│  │ [██████░░░░░] Gauge     │   │                                          │
+│  └─────────────────────────┘   │                                          │
+│                                │                                          │
+│  ┌─────────────────────────┐   │                                          │
+│  │ 🏙️ CASE STUDY COMPARE   │   │                                          │
+│  │ ━━━━━━━━━━━━━━━━━━━━━━  │   │                                          │
+│  │ Compare to: [NYC ▼]     │   │                                          │
+│  │ [Save Profile] [Export] │   │                                          │
+│  └─────────────────────────┘   │                                          │
+└───────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 3.5.7 Case Study Comparisons
+
+Users can save their current pedshed profile and compare it **side-by-side with benchmark cities** in the Morphocode database:
+- **Save Profile** – Capture current pedshed position with all three Urban Genome metrics
+- **Compare Cities** – Select from NYC, Chicago, Seattle, or other benchmark cities mapped at the same scale
+- **Side-by-Side View** – Display comparison cards showing how Tel Aviv neighborhoods measure against international benchmarks
+- **Export & Share** – Generate shareable reports with Urban Genome analysis
+
 ---
 
 ## 4. Technical Architecture
@@ -220,7 +355,93 @@ The application relies on highly customized **`.mvt` (Mapbox Vector Tile)** form
 - Support efficient filtering and styling in the browser
 - Enable real-time data-driven visualization
 
-### 4.5 Data Sources - Tel Aviv Specific
+### 4.5 Urban Genome Technical Architecture
+
+#### 4.5.1 State Management for Urban Genome
+
+The Urban Genome page hooks into the app's existing **Flux-style architecture**:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        URBAN GENOME STATE FLOW                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────┐    ┌──────────────────────┐    ┌────────────────────────┐ │
+│  │    PEDSHED   │───▶│   ACTION DISPATCHER  │───▶│     DATA STORES        │ │
+│  │    DRAG      │    │  (Triggers Updates)  │    │  ┌──────────────────┐  │ │
+│  │    EVENT     │    │                      │    │  │ PSA Store        │  │ │
+│  └──────────────┘    └──────────────────────┘    │  ├──────────────────┤  │ │
+│                                │                  │  │ ND Store         │  │ │
+│                                │                  │  ├──────────────────┤  │ │
+│                                │                  │  │ ADD Store        │  │ │
+│                                │                  │  └──────────────────┘  │ │
+│                                │                  └───────────┬────────────┘ │
+│                                │                              │              │
+│                                ▼                              ▼              │
+│                      ┌──────────────────────────────────────────────────┐   │
+│                      │              VIEW COMPONENTS                      │   │
+│                      │  • PSA Gauge Chart                               │   │
+│                      │  • ND Junction Visualization                     │   │
+│                      │  • ADD Distance Display                          │   │
+│                      │  • Comparison Cards                              │   │
+│                      └──────────────────────────────────────────────────┘   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Key Implementation Details:**
+- Action dispatcher triggers **simultaneous updates** to PSA, ND, and ADD data stores whenever the pedshed is dragged
+- View components update seamlessly in **one direction** (unidirectional data flow)
+- Real-time calculation ensures sub-100ms response time for metric updates
+
+#### 4.5.2 Custom Data Pipeline for Urban Genome
+
+Update the custom Python backend pipeline to generate web-friendly **Mapbox Vector Tiles (.mvt)** that bundle the specific attributes needed for Urban Genome calculations:
+
+| Data Layer | Required Attributes | Source |
+|------------|---------------------|--------|
+| **Public Spaces** | Area (m²), type (park/plaza/pedestrian zone), boundary geometry | Tel Aviv GIS Portal, OpenStreetMap |
+| **Population** | Population counts per statistical area, density estimates | CBS Israel Demographics |
+| **Network Junctions** | Junction node coordinates, connected street segments | OpenStreetMap, Tel Aviv Road Network |
+| **Building Entrances** | Entrance point coordinates, building type (residential/commercial/office), frontage classification | Building permits data, OpenStreetMap |
+
+**Pipeline Processing Steps:**
+1. Extract public space polygons and calculate areas
+2. Map CBS population data to spatial grid cells
+3. Identify network junctions (street/pedestrian path intersections)
+4. Extract building entrance points along public frontages
+5. Bundle all attributes into optimized .mvt tiles
+
+#### 4.5.3 Real-Time Calculation Logic
+
+When the pedshed is dragged, the following calculations execute client-side using Turf.js:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        CALCULATION SEQUENCE                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  1. PSA CALCULATION                                                          │
+│     ├─▶ Query public space polygons within pedshed                          │
+│     ├─▶ Calculate total public space area (m²)                              │
+│     ├─▶ Query population estimate for pedshed area                          │
+│     └─▶ Result: m² per person = Total Area / Population                     │
+│                                                                              │
+│  2. ND CALCULATION                                                           │
+│     ├─▶ Query junction nodes within pedshed                                 │
+│     ├─▶ Count total junctions                                               │
+│     ├─▶ Calculate pedshed area (km²)                                        │
+│     └─▶ Result: junctions/km² = Junction Count / Pedshed Area               │
+│                                                                              │
+│  3. ADD CALCULATION                                                          │
+│     ├─▶ Query building entrance points within pedshed                       │
+│     ├─▶ Calculate distances to nearest neighbors for each entrance          │
+│     └─▶ Result: Average of all nearest-neighbor distances                   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 4.6 Data Sources - Tel Aviv Specific
 
 | Source | URL | Data Available |
 |--------|-----|----------------|
@@ -231,7 +452,7 @@ The application relies on highly customized **`.mvt` (Mapbox Vector Tile)** form
 | **Israel Central Bureau of Statistics (CBS)** | https://www.cbs.gov.il | Census data, demographics, statistics |
 | NTA Metropolitan Mass Transit System | https://www.nta.co.il | Tel Aviv Light Rail (Dankal) routes and stations |
 
-### 4.6 Demographics & Local Data Integration
+### 4.7 Demographics & Local Data Integration
 
 Unlike tools that use the U.S. Census API, this version pulls demographic data from the **Israel Central Bureau of Statistics (CBS)**:
 - Tabular demographic data mapped to local statistical areas
@@ -348,14 +569,34 @@ If budget constraints require avoiding Mapbox costs:
 - [ ] Create interactive charts (D3.js)
 - [ ] Implement transit layer
 
-### Phase 3: Enhancement (6 weeks)
+### Phase 3: Urban Genome Integration (8 weeks)
+- [ ] Design and implement Urban Genome Analysis page/tab
+- [ ] Build Public Space Allocation (PSA) calculator module
+  - [ ] Integrate CBS population data
+  - [ ] Create public space area calculations
+  - [ ] Implement PSA gauge visualization
+- [ ] Build Network Density (ND) calculator module
+  - [ ] Extract junction node data from street network
+  - [ ] Implement junction counting algorithm
+  - [ ] Create ND visualization with dot density
+- [ ] Build Average Destination Distance (ADD) calculator module
+  - [ ] Process building entrance point data
+  - [ ] Implement nearest-neighbor distance calculations
+  - [ ] Create ADD histogram and warning indicators
+- [ ] Implement Urban Genome sidebar with scroll navigation
+- [ ] Create benchmark comparison visualizations (gauges, indicators)
+- [ ] Optimize real-time calculation performance
+
+### Phase 4: Enhancement (6 weeks)
 - [ ] Add additional data layers
 - [ ] Implement comparative analysis
 - [ ] Build export/share functionality
 - [ ] Optimize performance
 - [ ] Add 3D building visualization
+- [ ] Implement Urban Genome case study comparisons (NYC, Chicago, Seattle)
+- [ ] Build profile saving and comparison features
 
-### Phase 4: Launch (4 weeks)
+### Phase 5: Launch (4 weeks)
 - [ ] User testing and feedback
 - [ ] Bug fixes and optimization
 - [ ] Documentation
@@ -440,13 +681,29 @@ The following aspects of Morphocode Explorer inform this design:
 
 ---
 
-*Document Version: 1.1*  
+*Document Version: 1.2*  
 *Last Updated: March 2026*  
 *Author: Tel Aviv Urban Explorer Team*
 
 ---
 
 ## Changelog
+
+### Version 1.2 (March 2026)
+- **NEW: Urban Genome Analysis Page** - Added comprehensive dedicated page for quantitative urbanism assessment
+  - Added Urban Genome entries to Quick Reference table
+  - Added Section 3.5: Urban Genome Analysis Page with complete UX/UI specifications
+  - Added Module 1: Public Space Allocation (PSA) Calculator (1-10 m²/person benchmark)
+  - Added Module 2: Network Density (ND) Calculator (200-400 junctions/km² benchmark)
+  - Added Module 3: Average Destination Distance (ADD) Calculator (30m max benchmark)
+  - Added Urban Genome UI layout with scroll navigation and real-time updates
+  - Added Case Study Comparisons feature for benchmark city comparisons
+- **NEW: Urban Genome Technical Architecture** (Section 4.5)
+  - Added Flux-style state management diagram for Urban Genome
+  - Added custom data pipeline specifications for PSA, ND, ADD calculations
+  - Added real-time calculation logic documentation
+- **Updated Development Phases** - Added Phase 3: Urban Genome Integration (8 weeks)
+- Renumbered Phase 4 (Enhancement) and Phase 5 (Launch)
 
 ### Version 1.1 (March 2026)
 - Added Quick Reference table aligning with Morphocode Explorer PRD format
