@@ -234,7 +234,22 @@ export function Sidebar() {
               onChange={() => toggleLayer('poi')}
               icon="📍"
             />
+            <LayerToggle
+              label="Intersections"
+              checked={layers.intersections}
+              onChange={() => toggleLayer('intersections')}
+              icon="🔀"
+            />
           </div>
+          {layers.intersections && (
+            <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs bg-gray-50 rounded-lg p-2">
+              <LegendItem color="#ef4444" label="Complex (5+)" value={0} hideValue />
+              <LegendItem color="#22c55e" label="4-way cross" value={0} hideValue />
+              <LegendItem color="#f59e0b" label="T-junction (3)" value={0} hideValue />
+              <LegendItem color="#d1d5db" label="Curve (2)" value={0} hideValue />
+              <LegendItem color="#9ca3af" label="Dead end" value={0} hideValue />
+            </div>
+          )}
         </section>
 
         {/* Instructions */}
@@ -306,12 +321,12 @@ function ScoreBar({ label, score, color }: {
   );
 }
 
-function LegendItem({ color, label, value }: { color: string; label: string; value: number }) {
+function LegendItem({ color, label, value, hideValue }: { color: string; label: string; value: number; hideValue?: boolean }) {
   return (
     <div className="flex items-center gap-2">
       <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: color }} />
       <span className="text-gray-600 truncate">{label}</span>
-      <span className="font-medium text-gray-800 ml-auto">{value}%</span>
+      {!hideValue && <span className="font-medium text-gray-800 ml-auto">{value}%</span>}
     </div>
   );
 }

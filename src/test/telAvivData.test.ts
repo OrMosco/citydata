@@ -7,7 +7,10 @@ import {
   CITY_COMPARISONS,
   calculateDistance,
   getNeighborhoodFromCoordinates,
-  generateBuildingsInArea
+  generateBuildingsInArea,
+  RAW_INTERSECTIONS,
+  TEL_AVIV_INTERSECTIONS,
+  deduplicateIntersections,
 } from '../data/telAvivData';
 
 describe('telAvivData', () => {
@@ -168,6 +171,96 @@ describe('telAvivData', () => {
         expect(building.area).toBeGreaterThan(0);
         expect(building.landUse).toBeTruthy();
       });
+    });
+  });
+
+  describe('RAW_INTERSECTIONS', () => {
+    it('should have a meaningful number of raw nodes', () => {
+      expect(RAW_INTERSECTIONS.length).toBeGreaterThan(30);
+    });
+
+    it('should include duplicate pairs (for deduplication demonstration)', () => {
+      const dupIds = RAW_INTERSECTIONS.filter(n => n.id.endsWith('-dup'));
+      expect(dupIds.length).toBeGreaterThanOrEqual(5);
+    });
+
+    it('should have valid Tel Aviv coordinates for every node', () => {
+      RAW_INTERSECTIONS.forEach(node => {
+        expect(node.coordinates.lat).toBeGreaterThan(32.04);
+        expect(node.coordinates.lat).toBeLessThan(32.15);
+        expect(node.coordinates.lng).toBeGreaterThan(34.74);
+        expect(node.coordinates.lng).toBeLessThan(34.82);
+        expect(node.degree).toBeGreaterThanOrEqual(1);
+        expect(node.streets.length).toBeGreaterThanOrEqual(1);
+      });
+    });
+  });
+
+  describe('deduplicateIntersections', () => {
+    it('should merge nodes that are within the tolerance', () => {
+      const nodes = [
+        { id: 'a', coordinates: { lng: 34.770, lat: 32.080 }, degree: 3, streets: ['Street A'] },
+        // 8 m away from 'a' – should be merged
+        { id: 'b', coordinates: { lng: 34.7701, lat: 32.0801 }, degree: 2, streets: ['Street B'] },
+      ];
+      const result = deduplicateIntersections(nodes, 15);
+      expect(result.length).toBe(1);
+      expect(result[0].clusterSize).toBe(2);
+      expect(result[0].degree).toBe(5);
+      expect(result[0].streets).toContain('Street A');
+      expect(result[0].streets).toContain('Street B');
+    });
+
+    it('should not merge nodes that are farther apart than the tolerance', () => {
+      const nodes = [
+        { id: 'a', coordinates: { lng: 34.770, lat: 32.080 }, degree: 3, streets: ['Street A'] },
+        { id: 'b', coordinates: { lng: 34.772, lat: 32.082 }, degree: 3, streets: ['Street B'] },
+      ];
+      const result = deduplicateIntersections(nodes, 15);
+      expect(result.length).toBe(2);
+      expect(result.every(n => n.clusterSize === 1)).toBe(true);
+    });
+
+    it('should deduplicate street names within a merged cluster', () => {
+      const nodes = [
+        { id: 'a', coordinates: { lng: 34.770, lat: 32.080 }, degree: 3, streets: ['Dizengoff', 'Gordon'] },
+        { id: 'b', coordinates: { lng: 34.7701, lat: 32.0801 }, degree: 1, streets: ['Dizengoff'] },
+      ];
+      const result = deduplicateIntersections(nodes, 15);
+      expect(result[0].streets.filter(s => s === 'Dizengoff').length).toBe(1);
+    });
+
+    it('should assign the correct intersection type after merge', () => {
+      const nodes = [
+        { id: 'a', coordinates: { lng: 34.770, lat: 32.080 }, degree: 2, streets: ['A'] },
+        { id: 'b', coordinates: { lng: 34.7701, lat: 32.0801 }, degree: 2, streets: ['B'] },
+      ];
+      const [merged] = deduplicateIntersections(nodes, 15);
+      expect(merged.type).toBe('cross'); // 2+2 = 4 → cross
+    });
+  });
+
+  describe('TEL_AVIV_INTERSECTIONS (deduplicated)', () => {
+    it('should be smaller than the raw array (duplicates removed)', () => {
+      expect(TEL_AVIV_INTERSECTIONS.length).toBeLessThan(RAW_INTERSECTIONS.length);
+    });
+
+    it('every node should have a valid intersection type', () => {
+      const validTypes = ['dead_end', 'curve', 'T_intersection', 'cross', 'complex'];
+      TEL_AVIV_INTERSECTIONS.forEach(node => {
+        expect(validTypes).toContain(node.type);
+      });
+    });
+
+    it('every node should have clusterSize >= 1', () => {
+      TEL_AVIV_INTERSECTIONS.forEach(node => {
+        expect(node.clusterSize).toBeGreaterThanOrEqual(1);
+      });
+    });
+
+    it('should include nodes representing merged duplicate pairs', () => {
+      const merged = TEL_AVIV_INTERSECTIONS.filter(n => n.clusterSize > 1);
+      expect(merged.length).toBeGreaterThanOrEqual(5);
     });
   });
 });
