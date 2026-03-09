@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useAppStore } from '../../stores/appStore';
-import { TEL_AVIV_CENTER, TRANSIT_STATIONS, GREEN_SPACES, POINTS_OF_INTEREST } from '../../data/telAvivData';
+import { TEL_AVIV_CENTER, TRANSIT_STATIONS, GREEN_SPACES, POINTS_OF_INTEREST, TEL_AVIV_INTERSECTIONS } from '../../data/telAvivData';
 
 // Mapbox access token should be configured via environment variable VITE_MAPBOX_TOKEN
 // For production, create a .env file with: VITE_MAPBOX_TOKEN=your_token_here
@@ -384,6 +384,92 @@ export function MapView() {
       );
     }
   }, [isMapLoaded, layers.buildings]);
+
+  // Add intersections layer
+  useEffect(() => {
+    if (!map.current || !isMapLoaded) return;
+
+    const sourceId = 'intersections-data';
+
+    if (layers.intersections) {
+      if (!map.current.getSource(sourceId)) {
+        map.current.addSource(sourceId, {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: TEL_AVIV_INTERSECTIONS.map(node => ({
+              type: 'Feature',
+              properties: {
+                id: node.id,
+                degree: node.degree,
+                type: node.type,
+                streets: node.streets.join(' / '),
+                clusterSize: node.clusterSize,
+              },
+              geometry: {
+                type: 'Point',
+                coordinates: [node.coordinates.lng, node.coordinates.lat],
+              },
+            })),
+          },
+        });
+
+        // Circle layer — colour-coded by intersection type
+        map.current.addLayer({
+          id: 'intersection-circles',
+          type: 'circle',
+          source: sourceId,
+          paint: {
+            'circle-radius': [
+              'interpolate', ['linear'], ['get', 'degree'],
+              1, 4,
+              3, 6,
+              4, 7,
+              5, 9,
+            ],
+            'circle-color': [
+              'match', ['get', 'type'],
+              'dead_end',       '#9ca3af',
+              'curve',          '#d1d5db',
+              'T_intersection', '#f59e0b',
+              'cross',          '#22c55e',
+              'complex',        '#ef4444',
+              '#6b7280',
+            ],
+            'circle-stroke-width': 1.5,
+            'circle-stroke-color': '#ffffff',
+            'circle-opacity': 0.85,
+          },
+        });
+
+        // Label layer — street names for intersections with degree ≥ 4
+        map.current.addLayer({
+          id: 'intersection-labels',
+          type: 'symbol',
+          source: sourceId,
+          filter: ['>=', ['get', 'degree'], 4],
+          layout: {
+            'text-field': ['get', 'streets'],
+            'text-size': 10,
+            'text-offset': [0, 1.4],
+            'text-anchor': 'top',
+            'text-max-width': 8,
+          },
+          paint: {
+            'text-color': '#374151',
+            'text-halo-color': '#ffffff',
+            'text-halo-width': 1,
+          },
+        });
+      }
+
+      map.current.setLayoutProperty('intersection-circles', 'visibility', 'visible');
+      map.current.setLayoutProperty('intersection-labels', 'visibility', 'visible');
+    } else if (map.current.getLayer('intersection-circles')) {
+      map.current.setLayoutProperty('intersection-circles', 'visibility', 'none');
+      map.current.setLayoutProperty('intersection-labels', 'visibility', 'none');
+    }
+  }, [isMapLoaded, layers.intersections]);
 
   return (
     <div className="relative w-full h-full">

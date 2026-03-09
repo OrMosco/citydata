@@ -85,6 +85,24 @@ export interface LayerVisibility {
   greenSpaces: boolean;
   poi: boolean;
   demographics: boolean;
+  intersections: boolean;
+}
+
+// Intersection / node types
+export type IntersectionType = 'dead_end' | 'curve' | 'T_intersection' | 'cross' | 'complex';
+
+export interface RawIntersection {
+  id: string;
+  coordinates: Coordinates;
+  /** Number of street segments connected to this node */
+  degree: number;
+  streets: string[];
+}
+
+export interface Intersection extends RawIntersection {
+  type: IntersectionType;
+  /** Number of raw nodes that were merged into this one during deduplication */
+  clusterSize: number;
 }
 
 // Building data

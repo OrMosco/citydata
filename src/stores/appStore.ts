@@ -256,7 +256,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     transit: true,
     greenSpaces: true,
     poi: false,
-    demographics: false
+    demographics: false,
+    intersections: true
   },
   toggleLayer: (layer: keyof LayerVisibility) => {
     const { layers } = get();
